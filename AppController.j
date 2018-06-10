@@ -9,24 +9,57 @@
 @import <Foundation/Foundation.j>
 @import <AppKit/AppKit.j>
 
+var git = require("./git")
 
 @implementation AppController : CPObject
 {
     @outlet CPWindow    theWindow;
+    @outlet CPTextView  _textView;
+    @outlet CPTableView _tableView;
+
+    CPMutableArray _tableDataArray;
 }
 
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
 {
-    // This is called when the application is done loading.
+    [_textView setString:@"Loading..."]
+    _tableDataArray = @[];
+
+    git.listFilesAsync().then(function(fileList) {
+        _tableDataArray = fileList
+        [_tableView reloadData];
+
+        var indexSet = [CPIndexSet alloc];
+        [indexSet addIndex:0];
+        [_tableView selectRowIndexes:indexSet byExtendingSelection:NO];
+        [self performClick:self]
+    })
+}
+
+- (CPInteger)numberOfRowsInTableView:(CPTableView)table {
+    return [_tableDataArray count];
+}
+
+- (@action)performClick:(id)aSender {
+    var rowIndex = [_tableView selectedRow]
+    var fileName = _tableDataArray[rowIndex]
+
+    if (fileName) {
+        git.showDiff(fileName).then(function(diff) {
+            [_textView setString:diff]
+        })
+    }
+}
+
+- (id) tableView                :(CPTableView)table 
+       objectValueForTableColumn:(CPTableColumn)column 
+       row                      :(CPInteger)rowIndex
+{
+    return [_tableDataArray objectAtIndex:rowIndex];
 }
 
 - (void)awakeFromCib
 {
-    // This is called when the cib is done loading.
-    // You can implement this method on any object instantiated from a Cib.
-    // It's a useful hook for setting up current UI values, and other things.
-
-    // In this case, we want the window from Cib to become our full browser window
     [theWindow setFullPlatformWindow:YES];
 }
 
