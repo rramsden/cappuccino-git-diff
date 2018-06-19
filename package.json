@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "setup": "capp gen --frameworks --symlink .",
     "start": "electron ."
   },
   "author": "",
